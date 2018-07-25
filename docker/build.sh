@@ -67,7 +67,7 @@ apk update
 ###########################################
 apk add bash openssl python py-setuptools py-imaging sqlite \
     libevent util-linux glib jansson libarchive \
-		mariadb-client-libs postgresql-libs py-pillow
+		mariadb-client-libs postgresql-libs py-pillow py-mysqldb
 
 #################################################
 # Add build-deps for Seafile-Server             #
