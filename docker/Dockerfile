@@ -1,5 +1,5 @@
 FROM alpine:3.4
-MAINTAINER Vladimir Goshev <sunx@sunx.name>
+MAINTAINER Jan Rohwer <jan@rohwer.online>
 
 # SEAFILE_SERVER_DIR:
 # Where we will store seafile-server settings
