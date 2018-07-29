@@ -6,21 +6,17 @@ services:
       context: ./docker
     
     volumes:
-      - seafile-vol:/home/seafile:rw
+      - seafile-vol-test:/seafile/data:rw
 
     environment:
       SEAHUB:
       SEAFILE_FASTCGI_HOST: 0.0.0.0
-      HANDLE_SIGNALS: 1
-      INTERACTIVE: 0
       SERVER_DOMAIN: 127.0.0.1
-      #DEBUG: 1
-    
+
     depends_on: 
       - mysql
     
     container_name: seafile
-    #    domainname: seafile.domain.com
     restart: unless-stopped
 
     dns:
@@ -74,4 +70,5 @@ networks:
 
 volumes:
   seafile-vol:
+  seafile-vol-test:
   mysql-vol:

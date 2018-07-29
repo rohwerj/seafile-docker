@@ -1,8 +1,5 @@
 #!/bin/sh
 
-#Do debug output in case of debug
-[ "x$DEBUG" = "x1" ] && set -x
-
 #Seafile initialisation and start script
 VERSION_FILE=".seafile_version"
 
@@ -10,10 +7,15 @@ VERSION_FILE=".seafile_version"
 source /etc/profile.d/python-local.sh   
 
 # Make sure, that /usr/local/bin is in PATH 
-# (it shoul be there and without it, 
-#  but I want to be sure, because of 
+# (it shoul be there and without it,
+#  but I want to be sure, because of
 #  all seafile utilites are in /usr/local/bin)
 PATH=${PATH}:/usr/local/bin
+
+# Wait for containers
+while ! mysqladmin ping --host mysql -useafile -pseafile --silent; do
+  sleep 2
+done
 
 SEAFILE_VERSION=`cat /var/lib/seafile/version`
 if [ -z "$SEAFILE_VERSION" ]; then
@@ -21,23 +23,8 @@ if [ -z "$SEAFILE_VERSION" ]; then
 	exit 1
 fi
 
-EDGE_V=`cat /var/lib/seafile/edge`
-if [ "x$EDGE_V" = "x1" ]; then
-	EDGE_V=1
-else
-	EDGE_V=0
-fi
-
-# Delete old pid files
-rm "${HOME}/pids/*"
-
-# If it is interactive run or not, by default - yes.
-# It will affect configuration and update stages
-[ -z "$INTERACTIVE" ] && INTERACTIVE=1
-[ "x$INTERACTIVE" != "x1" ] && INTERACTIVE=0
-
 #Just in case
-cd $HOME
+cd ${HOME}
 
 #########################
 # Some useful functions #
@@ -47,7 +34,11 @@ start_seafile_server() {
 	if [ "$SEAHUB" == "fastcgi" ]; then
 		seafile-admin start --fastcgi
 	else
-		seafile-admin start
+	    cd ${HOME}
+	    seafile-controller -c /seafile/data/ccnet -d /seafile/data/seafile-data -F /seafile/data/conf
+	    cd seafile-server/seahub
+	    export CCNET_CONF_DIR=/seafile/data/ccnet && export SEAFILE_CONF_DIR=/seafile/data/conf && \
+	        gunicorn seahub.wsgi:application -c /seafile/data/conf/seahub_settings.py -b 0.0.0.0:8000
 	fi
 }
 
@@ -64,7 +55,7 @@ stop_seafile() {
 kill_seafile() {
 	echo "SIGKILL received, killing Seafile..."
 	killall -9 seafile-controller
-	killall -9 $(cat ${HOME}/seafile-server/runtime/seahub.pid)
+	killall -9 $(cat /seafile/seafile-server/runtime/seahub.pid)
 	exit 0
 }
 
@@ -76,111 +67,73 @@ hup_seafile() {
 	start_seafile_server
 }
 
-if [ ! -d 'seafile-server' ]; then
-	mkdir seafile-server
-	RES=$?
-	#If we wasn't able to create directory then,
-	#  probably permissions for $HOME are wrong
-	if [ $RES -ne 0 ]; then
-		echo "ERROR: Can't create directory $HOME/seafile, probably bad permisiions"
-		echo "To fix permissions, you can run:"
-		echo "docker run --rm -v <mount_point>:$HOME --user=0 <image> chown seafile:seafile $HOME"
-		exit 1
-	fi
-fi
-
-# Fix seahub dir if needed
-[ ! -d 'seafile-server/seahub' ] && mkdir -p seafile-server/seahub && \
-	tar xzf /usr/local/share/seafile/seahub.tgz -C seafile-server/seahub
-
 #Seafile-server related enviroment variables
-CCNET_CONF_DIR=${HOME}/ccnet
+CCNET_CONF_DIR=${HOME}/data/ccnet
 export CCNET_CONF_DIR
-SEAFILE_CONF_DIR=${HOME}/seafile-data
+SEAFILE_CONF_DIR=${HOME}/data/seafile-data
 export SEAFILE_CONF_DIR
-SEAFILE_CENTRAL_CONF_DIR=${HOME}/conf
+SEAFILE_CENTRAL_CONF_DIR=${HOME}/data/conf
 export SEAFILE_CENTRAL_CONF_DIR
 
-#We do not want to reset admin password. probably
-RESET_ADMIN=0
-
-# If there is $VERSION_FILE already, then it isn't first run of this script, 
+# If there is $VERSION_FILE already, then it isn't first run of this script,
 #  do not need to configure seafile
 if [ ! -f $VERSION_FILE ]; then
 	echo 'No previous version on Seafile configurations found, starting seafile configuration...'
 
 
 	# Init ccnet
-	if [ ! -d 'ccnet' ]; then
-		#SERVER_NAME=""
-		#SERVER_DOMAIN=""
-		if [ $INTERACTIVE -eq 1 ]; then
-			echo "Enter the name of the server  (3 - 15 letters or digits)"
-			echo -n "[server name ]: "
-			read SERVER_NAME
+	if [ ! -d 'data/ccnet' ]; then
+        [ -z "$SERVER_NAME"   ] && SERVER_NAME="Seafile"
+        [ -z "$SERVER_DOMAIN" ] && SERVER_DOMAIN="seafile.domain.com"
 
-			echo "Enter the domain OR ip of the server?  (For example: www.mycompany.com, 192.168.1.101)"
-			echo -n "[ip or domain ]: "
-			read SERVER_DOMAIN
-		else
-			[ -z "$SERVER_NAME"   ] && SERVER_NAME="Seafile"
-			[ -z "$SERVER_DOMAIN" ] && SERVER_DOMAIN="seafile.domain.com"
-		fi
-
-		ccnet-init -F ${HOME}/conf -c ${HOME}/ccnet --name "$SERVER_NAME" --port 10001 --host "$SERVER_DOMAIN" || exit 3
+		ccnet-init -F ${HOME}/data/conf -c ${HOME}/data/ccnet --name "$SERVER_NAME" --port 10001 --host "$SERVER_DOMAIN" || exit 3
 		echo '* ccnet configured successfully'
 	fi
 
 	# Init seafile
-	if [ ! -d 'seafile-data' ]; then
-		seaf-server-init -F ${HOME}/conf --seafile-dir ${HOME}/seafile-data --port 12001 --fileserver-port 8082 || exit 4
-		echo "${HOME}/seafile-data" > ${HOME}/ccnet/seafile.ini
+	if [ ! -d "data/seafile-data" ]; then
+		seaf-server-init -F ${HOME}/data/conf --seafile-dir ${HOME}/data/seafile-data --port 12001 --fileserver-port 8082 || exit 4
+		echo "${HOME}/data/seafile-data" > ${HOME}/data/ccnet/seafile.ini
 		echo '* seafile configured successfully'
 	fi
 
 	# Init seahub
-	if [ ! -f 'conf/seahub_settings.py' ]; then
+	if [ ! -f "data/conf/seahub_settings.py" ]; then
 		SKEY1=`uuidgen -r`
 		SKEY2=`uuidgen -r`
 		SKEY=`echo "$SKEY1$SKEY2" | cut -c1-40`
-		echo "SECRET_KEY = '${SKEY}'" > ${HOME}/conf/seahub_settings.py
+		echo "SECRET_KEY = '${SKEY}'
 
-		mkdir -p seahub-data/avatars
-		mv -f seafile-server/seahub/media/avatars/* seahub-data/avatars/
+ADMINS = (
+    # ('Your Name', 'your_email@domain.com'),
+)
+
+MANAGERS = ADMINS
+
+DATABASES = {
+    'default': {
+        'ENGINE': 'django.db.backends.sqlite3', # Add 'postgresql_psycopg2', 'mysql', 'sqlite3' or 'oracle'.
+        'NAME': '/seafile/data/seahub.db', # Or path to database file if using sqlite3.
+        'USER': '',                      # Not used with sqlite3.
+        'PASSWORD': '',                  # Not used with sqlite3.
+        'HOST': '',                      # Set to empty string for localhost. Not used with sqlite3.
+        'PORT': '',                      # Set to empty string for default. Not used with sqlite3.
+    }
+}" > ${HOME}/data/conf/seahub_settings.py
+
+		mkdir -p ${HOME}/data/seahub-data/avatars
+		mv -f seafile-server/seahub/media/avatars/* ${HOME}/data/seahub-data/avatars/
 		rm -rf seafile-server/seahub/media/avatars
-		ln -s ${HOME}/seahub-data/avatars ${HOME}/seafile-server/seahub/media/avatars
+		ln -s ${HOME}/data/seahub-data/avatars /seafile/seafile-server/seahub/media/avatars
 		echo '* seahub configured successfully'
 	fi
 
-	# Do syncdb anyway, because it willn't corrupt old databse
-	#if [ ! -f 'seahub.db' ]; then
 	python seafile-server/seahub/manage.py syncdb || exit 5
-	echo
 	echo '* seahub database synchronized successfully'
-	#fi
-
-	#Make Gunicorn config
-	if [ ! -f 'seafile-server/runtime/seahub.conf' ]; then
-		mkdir "${HOME}/seafile-server/runtime"
-		echo "import os
-daemon = True
-workers = 3
-
-# Logging
-runtime_dir = os.path.dirname(__file__)
-pidfile = os.path.join(runtime_dir, 'seahub.pid')
-errorlog = os.path.join(runtime_dir, 'error.log')
-accesslog = os.path.join(runtime_dir, 'access.log')" > "${HOME}/seafile-server/runtime/seahub.conf"
-
-		echo '* gunicorn configured successfully'
-	fi
 
 	# Keep seafile version for managing future updates
 	echo -n "${SEAFILE_VERSION}" > $VERSION_FILE
 	echo "Configuration compleated!"
-
-	#Say that we want to create admin user after server start
-	RESET_ADMIN=1
 
 else #[ ! -f $VERSION_FILE ];
 	# Need to check if we need to run upgrade scripts
@@ -195,13 +148,7 @@ else #[ ! -f $VERSION_FILE ];
 		else
 			echo "No .no-update file found, performing update..."
 
-			#Copy new seahub
-			[ -e 'seafile-server/seahub' ] && mv ${HOME}/seafile-server/seahub ${HOME}/seafile-server/seahub.old
-			mkdir -p seafile-server/seahub && \
-				tar xzf /usr/local/share/seafile/seahub.tgz -C seafile-server/seahub && \
-				[ -e 'seafile-server/seahub.old' ] && rm -rf ${HOME}/seafile-server/seahub.old
-
-			# Copy upgrade scripts. symlink doesn't work, unfortunatelly 
+			# Copy upgrade scripts. symlink doesn't work, unfortunatelly
 			#  and I do not want to patch all of them
 			cp -rf /usr/local/share/seafile/scripts/upgrade seafile-server/
 			# Get first and second numbers of versions (we do not care about last number, actually)
@@ -220,11 +167,7 @@ else #[ ! -f $VERSION_FILE ];
 				SCRIPT="./seafile-server/upgrade/upgrade_${i1p}.${i2p}_${i1}.${i2}.sh"
 				if [ -f $SCRIPT ]; then
 					echo "Executing $SCRIPT..."
-					if [ $INTERACTIVE -eq 1 ]; then
-						$SCRIPT
-					else
-						echo | $SCRIPT
-					fi
+                    echo | $SCRIPT
 
 					i1p=$i1
 					i2p=$i2
@@ -237,11 +180,7 @@ else #[ ! -f $VERSION_FILE ];
 			done
 
 			# Run minor upgrade, just in case (Actually needed when only last number was changed)
-			if [ $INTERACTIVE -eq 1 ]; then
-				./seafile-server/upgrade/minor-upgrade.sh
-			else
-				echo | ./seafile-server/upgrade/minor-upgrade.sh
-			fi
+    		echo | ./seafile-server/upgrade/minor-upgrade.sh
 
 			rm -rf seafile-server/upgrade
 			echo -n "${SEAFILE_VERSION}" > $VERSION_FILE
@@ -258,19 +197,6 @@ start_seafile_server
 trap stop_seafile INT TERM PWR
 trap kill_seafile KILL
 trap hup_seafile HUP
-
-if [ $RESET_ADMIN -eq 1 ]; then
-	# Create admin user only in interactive mode. Just becouse.
-	if [ $INTERACTIVE -eq 1 ]; then
-		echo "Creating administrator user:"
-		python seafile-server/seahub/manage.py createsuperuser
-	else
-		echo "To create administrator user, execute"
-		echo "  python seafile-server/seahub/manage.py createsuperuser"
-		echo " in container."
-	fi
-	echo ""
-fi
 
 if [ "x$HANDLE_SIGNALS" != "x1" ]; then
 	exec tail -f logs/* seafile-server/runtime/*.log
