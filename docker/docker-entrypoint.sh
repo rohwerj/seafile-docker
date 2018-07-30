@@ -89,6 +89,7 @@ DATABASES = {
 	echo '* seahub database synchronized successfully'
 
     chown -R seafile:seafile /seafile/data
+    chown -R seafile:seafile /tmp/seahub_cache
 
 	# Keep seafile version for managing future updates
 	echo -n "${SEAFILE_VERSION}" > data/$VERSION_FILE
