@@ -3,10 +3,7 @@
 #Seafile initialisation and start script
 VERSION_FILE=".seafile_version"
 
-#Be sure, that python path variable is loaded
-source /etc/profile.d/python-local.sh   
-
-# Make sure, that /usr/local/bin is in PATH 
+# Make sure, that /usr/local/bin is in PATH
 # (it shoul be there and without it,
 #  but I want to be sure, because of
 #  all seafile utilites are in /usr/local/bin)
@@ -24,60 +21,19 @@ if [ -z "$SEAFILE_VERSION" ]; then
 fi
 
 #Just in case
-cd ${HOME}
-
-#########################
-# Some useful functions #
-#########################
-
-start_seafile_server() {
-	if [ "$SEAHUB" == "fastcgi" ]; then
-		seafile-admin start --fastcgi
-	else
-	    cd ${HOME}
-	    seafile-controller -c /seafile/data/ccnet -d /seafile/data/seafile-data -F /seafile/data/conf
-	    cd seafile-server/seahub
-	    export CCNET_CONF_DIR=/seafile/data/ccnet && export SEAFILE_CONF_DIR=/seafile/data/conf && \
-	        gunicorn seahub.wsgi:application -c /seafile/data/conf/seahub_settings.py -b 0.0.0.0:8000
-	fi
-}
-
-stop_seafile() {
-	echo "SIGTERM or similar received, stopping Seafile..."
-	cd ${HOME}
-	seafile-admin stop
-	# We need to wait a bit to make sure that
-	#  seafile server really has been stopped
-	sleep 5 
-	exit 0
-}
-
-kill_seafile() {
-	echo "SIGKILL received, killing Seafile..."
-	killall -9 seafile-controller
-	killall -9 $(cat /seafile/seafile-server/runtime/seahub.pid)
-	exit 0
-}
-
-hup_seafile() {
-	echo "SIGHUP or similar received, restarting Seafile..."
-	cd ${HOME}
-	seafile-admin stop
-	sleep 10
-	start_seafile_server
-}
+cd /seafile
 
 #Seafile-server related enviroment variables
-CCNET_CONF_DIR=${HOME}/data/ccnet
+CCNET_CONF_DIR=/seafile/data/ccnet
 export CCNET_CONF_DIR
-SEAFILE_CONF_DIR=${HOME}/data/seafile-data
+SEAFILE_CONF_DIR=/seafile/data/seafile-data
 export SEAFILE_CONF_DIR
-SEAFILE_CENTRAL_CONF_DIR=${HOME}/data/conf
+SEAFILE_CENTRAL_CONF_DIR=/seafile/data/conf
 export SEAFILE_CENTRAL_CONF_DIR
 
 # If there is $VERSION_FILE already, then it isn't first run of this script,
 #  do not need to configure seafile
-if [ ! -f $VERSION_FILE ]; then
+if [ ! -f data/$VERSION_FILE ]; then
 	echo 'No previous version on Seafile configurations found, starting seafile configuration...'
 
 
@@ -86,14 +42,14 @@ if [ ! -f $VERSION_FILE ]; then
         [ -z "$SERVER_NAME"   ] && SERVER_NAME="Seafile"
         [ -z "$SERVER_DOMAIN" ] && SERVER_DOMAIN="seafile.domain.com"
 
-		ccnet-init -F ${HOME}/data/conf -c ${HOME}/data/ccnet --name "$SERVER_NAME" --port 10001 --host "$SERVER_DOMAIN" || exit 3
+		ccnet-init -F ${SEAFILE_CENTRAL_CONF_DIR} -c ${CCNET_CONF_DIR} --name "$SERVER_NAME" --port 10001 --host "$SERVER_DOMAIN" || exit 3
 		echo '* ccnet configured successfully'
 	fi
 
 	# Init seafile
 	if [ ! -d "data/seafile-data" ]; then
-		seaf-server-init -F ${HOME}/data/conf --seafile-dir ${HOME}/data/seafile-data --port 12001 --fileserver-port 8082 || exit 4
-		echo "${HOME}/data/seafile-data" > ${HOME}/data/ccnet/seafile.ini
+		seaf-server-init -F ${SEAFILE_CENTRAL_CONF_DIR} --seafile-dir ${SEAFILE_CONF_DIR} --port 12001 --fileserver-port 8082 || exit 4
+		echo "${SEAFILE_CONF_DIR}" > ${CCNET_CONF_DIR}/seafile.ini
 		echo '* seafile configured successfully'
 	fi
 
@@ -119,26 +75,29 @@ DATABASES = {
         'HOST': '',                      # Set to empty string for localhost. Not used with sqlite3.
         'PORT': '',                      # Set to empty string for default. Not used with sqlite3.
     }
-}" > ${HOME}/data/conf/seahub_settings.py
+}" > ${SEAFILE_CENTRAL_CONF_DIR}/seahub_settings.py
 
-		mkdir -p ${HOME}/data/seahub-data/avatars
-		mv -f seafile-server/seahub/media/avatars/* ${HOME}/data/seahub-data/avatars/
+		mkdir -p /seafile/data/seahub-data/avatars
+		mv -f seafile-server/seahub/media/avatars/* /seafile/data/seahub-data/avatars/
 		rm -rf seafile-server/seahub/media/avatars
-		ln -s ${HOME}/data/seahub-data/avatars /seafile/seafile-server/seahub/media/avatars
+		ln -s /seafile/data/seahub-data/avatars /seafile/seafile-server/seahub/media/avatars
 		echo '* seahub configured successfully'
 	fi
 
+    export PYTHONPATH="/usr/lib/python2.7/site-packages:/usr/local/lib/python2.7/site-packages:/seafile/seafile-server/seahub/thirdpart"
 	python seafile-server/seahub/manage.py syncdb || exit 5
 	echo '* seahub database synchronized successfully'
 
+    chown -R seafile:seafile /seafile/data
+
 	# Keep seafile version for managing future updates
-	echo -n "${SEAFILE_VERSION}" > $VERSION_FILE
+	echo -n "${SEAFILE_VERSION}" > data/$VERSION_FILE
 	echo "Configuration compleated!"
 
 else #[ ! -f $VERSION_FILE ];
 	# Need to check if we need to run upgrade scripts
 	echo "Version file found in container, checking it"
-	OLD_VER=`cat $VERSION_FILE`
+	OLD_VER=`cat data/$VERSION_FILE`
 	if [ "x$OLD_VER" != "x$SEAFILE_VERSION" ]; then
 		echo "Version is different. Stored version is $OLD_VER, Current version is $SEAFILE_VERSION"
 		if [ -f '.no-update' ]; then
@@ -183,29 +142,14 @@ else #[ ! -f $VERSION_FILE ];
     		echo | ./seafile-server/upgrade/minor-upgrade.sh
 
 			rm -rf seafile-server/upgrade
-			echo -n "${SEAFILE_VERSION}" > $VERSION_FILE
+
+            chown -R seafile:seafile /seafile/data
+
+			echo -n "${SEAFILE_VERSION}" > data/$VERSION_FILE
 		fi
 	else
 		echo "Version is the same, no upgrade needed"
 	fi
 fi
 
-
-echo "Starting seafile server..."
-start_seafile_server
-
-trap stop_seafile INT TERM PWR
-trap kill_seafile KILL
-trap hup_seafile HUP
-
-if [ "x$HANDLE_SIGNALS" != "x1" ]; then
-	exec tail -f logs/* seafile-server/runtime/*.log
-else
-	#We can't run exec or our signal-handling functions will not work =(
-	tail -f logs/* seafile-server/runtime/*.log &
-	#Also we'll need to run infinity cycle I'm not sure if it's really is good idea
-	# But I have no more ides how to do it
-	while true; do
-		sleep 1
-	done
-fi
+exec "$@"

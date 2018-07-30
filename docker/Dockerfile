@@ -22,7 +22,7 @@ RUN apk update
 ###########################################
 RUN apk add bash openssl python py-setuptools py-imaging sqlite \
     libevent util-linux glib jansson libarchive \
-		mariadb-client-libs postgresql-libs py-pillow py-mysqldb mariadb-client
+		mariadb-client-libs postgresql-libs py-pillow py-mysqldb mariadb-client syslog-ng supervisor
 
 #################################################
 # Add build-deps for Seafile-Server             #
@@ -84,33 +84,20 @@ RUN cd seahub-${SEAFILE_VERSION}-server/ && pip install -r requirements.txt && \
     pip install gunicorn django-picklefield requests flup==1.0.3.dev-20110405  && \
     cd .. && mv seahub-${SEAFILE_VERSION}-server seafile-server/seahub
 
-RUN mkdir /seafile/seafile-server/runtime && \
-		echo "import os \
-daemon = True \
-workers = 3 \
-\
-# Logging \
-runtime_dir = os.path.dirname(__file__) \
-pidfile = os.path.join(runtime_dir, 'seahub.pid') \
-errorlog = os.path.join(runtime_dir, 'error.log') \
-accesslog = os.path.join(runtime_dir, 'access.log')" > /seafile/seafile-server/runtime/seahub.conf
+RUN mkdir /seafile/seafile-server/runtime
+COPY seahub.conf /seafile/seafile-server/runtime/seahub.conf
 
 ###########
 # SeafObj #
 ###########
 RUN cd seafobj-${SEAFILE_VERSION}-server/ && \
-    export PYTHON_PACKAGES_DIR=`python -c "from distutils.sysconfig import get_python_lib; print(get_python_lib())"` && \
-    mv seafobj ${PYTHON_PACKAGES_DIR}/ && cd .. && rm -rf seafobj-${SEAFILE_VERSION}-server
+    mv seafobj /usr/local/lib/python2.7/site-packages && cd .. && rm -rf seafobj-${SEAFILE_VERSION}-server
 
 ###########
 # SeafDav #
 ###########
 RUN cd seafdav-${SEAFILE_VERSION}-server/ && \
-    export PYTHON_PACKAGES_DIR=`python -c "from distutils.sysconfig import get_python_lib; print(get_python_lib())"` &&  \
-    mv wsgidav ${PYTHON_PACKAGES_DIR}/ && cd .. && rm -rf seafdav-${SEAFILE_VERSION}-server
-
-RUN export PYTHON_PACKAGES_DIR=`python -c "from distutils.sysconfig import get_python_lib; print(get_python_lib())"` && \
-    echo "export PYTHONPATH=${PYTHON_PACKAGES_DIR}:/usr/local/lib/python2.7/site-packages/:/usr/local/lib/python2.7/:/seafile/seafile-server/seahub/thirdpart" >> /etc/profile.d/python-local.sh
+    mv wsgidav /usr/local/lib/python2.7/site-packages && cd .. && rm -rf seafdav-${SEAFILE_VERSION}-server
 
 RUN ldconfig || true
 
@@ -126,20 +113,21 @@ RUN adduser -D -s /bin/sh -g "Seafile Server" -G seafile -h /seafile -u 2016 sea
 RUN mkdir -p /var/lib/seafile && echo -n "$SEAFILE_VERSION" > /var/lib/seafile/version
 
 # Container initialization scripts ()
-COPY docker-run.sh /bin/docker-run
+COPY docker-entrypoint.sh /
+COPY syslog-ng.conf /etc/syslog-ng/syslog-ng.conf
+COPY supervisord.conf /etc/supervisor/supervisord.conf
+
+RUN mkdir /seafile/logs && \
+    mkdir /seafile/pids && \
+    mkdir /seafile/data && \
+    chown -R seafile:seafile /seafile
 
 EXPOSE 8000 8082
 
-RUN mkdir /pids && chown seafile:seafile /pids
-RUN mkdir /seafile/data && chown -R seafile:seafile /seafile
-
 VOLUME /seafile/data
 
-USER seafile
-
-# Container will run /bin/docker-run with seafile user access
-# to configure (if needed) and run Seafile server
-CMD ["/bin/docker-run"]
+ENTRYPOINT ["/docker-entrypoint.sh"]
+CMD exec /usr/bin/supervisord -c /etc/supervisor/supervisord.conf
 
 #########################################
 # Delete all unneded files and packages #
