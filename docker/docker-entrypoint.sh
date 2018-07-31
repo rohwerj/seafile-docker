@@ -62,12 +62,6 @@ if [ ! -f data/$VERSION_FILE ]; then
 		SKEY=`echo "$SKEY1$SKEY2" | cut -c1-40`
 		echo "SECRET_KEY = '${SKEY}'
 
-ADMINS = (
-    # ('Your Name', 'your_email@domain.com'),
-)
-
-MANAGERS = ADMINS
-
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.sqlite3', # Add 'postgresql_psycopg2', 'mysql', 'sqlite3' or 'oracle'.
