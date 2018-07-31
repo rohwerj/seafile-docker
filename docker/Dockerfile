@@ -99,6 +99,12 @@ RUN cd seafobj-${SEAFILE_VERSION}-server/ && \
 RUN cd seafdav-${SEAFILE_VERSION}-server/ && \
     mv wsgidav /usr/local/lib/python2.7/site-packages && cd .. && rm -rf seafdav-${SEAFILE_VERSION}-server
 
+RUN echo $'export PYTHONPATH=/usr/lib/python2.7/site-packages/:/usr/local/lib/python2.7/site-packages/:/seafile/seafile-server/seahub/thirdpart\n \
+export SEAHUB_LOG_DIR=/seafile/logs\n \
+export CCNET_CONF_DIR=/seafile/data/ccnet\n \
+export SEAFILE_CONF_DIR=/seafile/data/seafile-data\n \
+export SEAFILE_CENTRAL_CONF_DIR=/seafile/data/conf' >> /etc/profile.d/seahub.sh
+
 RUN ldconfig || true
 
 ##############################

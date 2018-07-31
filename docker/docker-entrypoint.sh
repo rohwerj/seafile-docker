@@ -20,6 +20,8 @@ if [ -z "$SEAFILE_VERSION" ]; then
 	exit 1
 fi
 
+source /etc/profile.d/seahub.sh
+
 #Just in case
 cd /seafile
 
@@ -84,11 +86,10 @@ DATABASES = {
 		echo '* seahub configured successfully'
 	fi
 
-    export PYTHONPATH="/usr/lib/python2.7/site-packages:/usr/local/lib/python2.7/site-packages:/seafile/seafile-server/seahub/thirdpart"
 	python seafile-server/seahub/manage.py syncdb || exit 5
 	echo '* seahub database synchronized successfully'
 
-    chown -R seafile:seafile /seafile/data
+    chown -R seafile:seafile /seafile/
     chown -R seafile:seafile /tmp/seahub_cache
 
 	# Keep seafile version for managing future updates
@@ -144,7 +145,7 @@ else #[ ! -f $VERSION_FILE ];
 
 			rm -rf seafile-server/upgrade
 
-            chown -R seafile:seafile /seafile/data
+            chown -R seafile:seafile /seafile/
 
 			echo -n "${SEAFILE_VERSION}" > data/$VERSION_FILE
 		fi
