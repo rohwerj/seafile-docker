@@ -103,9 +103,6 @@ else #[ ! -f $VERSION_FILE ];
 		else
 			echo "No .no-update file found, performing update..."
 
-			# Copy upgrade scripts. symlink doesn't work, unfortunatelly
-			#  and I do not want to patch all of them
-			cp -rf /usr/local/share/seafile/scripts/upgrade seafile-server/
 			# Get first and second numbers of versions (we do not care about last number, actually)
 			OV1=`echo "$OLD_VER" | cut -d. -f1`
 			OV2=`echo "$OLD_VER" | cut -d. -f2`
@@ -119,7 +116,7 @@ else #[ ! -f $VERSION_FILE ];
 			i2p=$OV2
 			i2=`expr $i2p '+' 1`
 			while [ $i1 -le $CV1 ]; do
-				SCRIPT="./seafile-server/upgrade/upgrade_${i1p}.${i2p}_${i1}.${i2}.sh"
+				SCRIPT="./seafile-server/scripts/upgrade/upgrade_${i1p}.${i2p}_${i1}.${i2}.sh"
 				if [ -f $SCRIPT ]; then
 					echo "Executing $SCRIPT..."
                     echo | $SCRIPT
@@ -135,9 +132,7 @@ else #[ ! -f $VERSION_FILE ];
 			done
 
 			# Run minor upgrade, just in case (Actually needed when only last number was changed)
-    		echo | ./seafile-server/upgrade/minor-upgrade.sh
-
-			rm -rf seafile-server/upgrade
+    		echo | ./seafile-server/scripts/upgrade/minor-upgrade.sh
 
             chown -R seafile:seafile /seafile/
 

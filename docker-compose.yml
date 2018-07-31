@@ -6,7 +6,7 @@ services:
       context: ./docker
     
     volumes:
-      - seafile-vol-test:/seafile/data:rw
+      - seafile-vol:/seafile/data:rw
 
     environment:
       SEAHUB:
