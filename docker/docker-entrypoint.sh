@@ -20,7 +20,7 @@ if [ -z "$SEAFILE_VERSION" ]; then
 	exit 1
 fi
 
-source /etc/profile.d/seahub.sh
+source /etc/profile.d/seafile.sh
 
 #Just in case
 cd /seafile
@@ -73,10 +73,6 @@ DATABASES = {
     }
 }" > ${SEAFILE_CENTRAL_CONF_DIR}/seahub_settings.py
 
-		mkdir -p /seafile/data/seahub-data/avatars
-		mv -f seafile-server/seahub/media/avatars/* /seafile/data/seahub-data/avatars/
-		rm -rf seafile-server/seahub/media/avatars
-		ln -s /seafile/data/seahub-data/avatars /seafile/seafile-server/seahub/media/avatars
 		echo '* seahub configured successfully'
 	fi
 
@@ -118,8 +114,12 @@ else #[ ! -f $VERSION_FILE ];
 			while [ $i1 -le $CV1 ]; do
 				SCRIPT="./seafile-server/scripts/upgrade/upgrade_${i1p}.${i2p}_${i1}.${i2}.sh"
 				if [ -f $SCRIPT ]; then
-					echo "Executing $SCRIPT..."
-                    echo | $SCRIPT
+                    echo "Upgrading database from version ${i1p}.${i2p} to ${i1}.${i2}"
+
+                    db_update_helper=./seafile-server/scripts/upgrade/db_update_helper.py
+                    if ! python2.7 "${db_update_helper}" ${i1}.${i2}.0; then
+                        echo "Failed to upgrade your database"
+                    fi
 
 					i1p=$i1
 					i2p=$i2
@@ -131,9 +131,6 @@ else #[ ! -f $VERSION_FILE ];
 				fi
 			done
 
-			# Run minor upgrade, just in case (Actually needed when only last number was changed)
-    		echo | ./seafile-server/scripts/upgrade/minor-upgrade.sh
-
             chown -R seafile:seafile /seafile/
 
 			echo -n "${SEAFILE_VERSION}" > data/$VERSION_FILE
@@ -142,5 +139,15 @@ else #[ ! -f $VERSION_FILE ];
 		echo "Version is the same, no upgrade needed"
 	fi
 fi
+
+# migrate avatars on every start
+mkdir -p /seafile/data/seahub-data/avatars
+mv -f seafile-server/seahub/media/avatars/* /seafile/data/seahub-data/avatars/ 2>/dev/null 1>&2
+rm -rf seafile-server/seahub/media/avatars
+ln -s /seafile/data/seahub-data/avatars /seafile/seafile-server/seahub/media/avatars
+
+# create media custom directory symlink on every start
+mkdir -p /seafile/data/seahub-data/custom
+ln -s /seafile/data/seahub-data/custom /seafile/seafile-server/seahub/media/custom
 
 exec "$@"

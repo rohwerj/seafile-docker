@@ -84,8 +84,7 @@ RUN cd seahub-${SEAFILE_VERSION}-server/ && pip install -r requirements.txt && \
     pip install gunicorn django-picklefield requests flup==1.0.3.dev-20110405  && \
     cd .. && mv seahub-${SEAFILE_VERSION}-server seafile-server/seahub
 
-RUN mkdir /seafile/seafile-server/runtime
-COPY seahub.conf /seafile/seafile-server/runtime/seahub.conf
+COPY seahub.conf /seafile/seahub.conf
 
 ###########
 # SeafObj #
@@ -103,7 +102,7 @@ RUN echo $'export PYTHONPATH=/usr/lib/python2.7/site-packages/:/usr/local/lib/py
 export SEAHUB_LOG_DIR=/seafile/logs\n \
 export CCNET_CONF_DIR=/seafile/data/ccnet\n \
 export SEAFILE_CONF_DIR=/seafile/data/seafile-data\n \
-export SEAFILE_CENTRAL_CONF_DIR=/seafile/data/conf' >> /etc/profile.d/seahub.sh
+export SEAFILE_CENTRAL_CONF_DIR=/seafile/data/conf' >> /etc/profile.d/seafile.sh
 
 RUN ldconfig || true
 
