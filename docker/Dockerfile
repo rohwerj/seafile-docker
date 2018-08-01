@@ -122,6 +122,8 @@ COPY docker-entrypoint.sh /
 COPY syslog-ng.conf /etc/syslog-ng/syslog-ng.conf
 COPY supervisord.conf /etc/supervisor/supervisord.conf
 
+RUN chmod +x /docker-entrypoint.sh
+
 RUN mkdir /seafile/logs && \
     mkdir /seafile/pids && \
     mkdir /seafile/data && \
