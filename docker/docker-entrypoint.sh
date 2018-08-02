@@ -1,4 +1,5 @@
-#!/bin/sh
+#!/bin/bash
+set -e
 
 #Seafile initialisation and start script
 VERSION_FILE=".seafile_version"
