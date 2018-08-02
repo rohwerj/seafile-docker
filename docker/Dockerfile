@@ -120,7 +120,7 @@ RUN mkdir -p /var/lib/seafile && echo -n "$SEAFILE_VERSION" > /var/lib/seafile/v
 # Container initialization scripts ()
 COPY docker-entrypoint.sh /
 COPY syslog-ng.conf /etc/syslog-ng/syslog-ng.conf
-COPY supervisord.conf /etc/supervisor/supervisord.conf
+COPY supervisord.conf /etc/supervisord.conf
 
 RUN chmod +x /docker-entrypoint.sh
 
@@ -134,7 +134,7 @@ EXPOSE 8000 8082
 VOLUME /seafile/data
 
 ENTRYPOINT ["/docker-entrypoint.sh"]
-CMD exec /usr/bin/supervisord -c /etc/supervisor/supervisord.conf
+CMD exec /usr/bin/supervisord -c /etc/supervisord.conf
 
 #########################################
 # Delete all unneded files and packages #
