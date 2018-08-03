@@ -9,9 +9,10 @@ services:
       - seafile-vol:/seafile/data:rw
 
     environment:
-      SEAHUB:
-      SEAFILE_FASTCGI_HOST: 0.0.0.0
       SERVER_DOMAIN: 127.0.0.1
+      MYSQL_HOST: mysql
+      MYSQL_USER: seafile
+      MYSQL_PASS: seafile
 
     depends_on: 
       - mysql

@@ -1,5 +1,4 @@
-#!/bin/bash
-set -e
+#!/bin/sh
 
 #Seafile initialisation and start script
 VERSION_FILE=".seafile_version"
@@ -10,10 +9,12 @@ VERSION_FILE=".seafile_version"
 #  all seafile utilites are in /usr/local/bin)
 PATH=${PATH}:/usr/local/bin
 
-# Wait for containers
-while ! mysqladmin ping --host mysql -useafile -pseafile --silent; do
-  sleep 2
-done
+if [[ ! -z "$MYSQL_HOST" ]]; then
+    # Wait for containers
+    while ! mysqladmin ping --host $MYSQL_HOST -u$MYSQL_USER -p$MYSQL_PASS --silent; do
+      sleep 2
+    done
+fi
 
 SEAFILE_VERSION=`cat /var/lib/seafile/version`
 if [ -z "$SEAFILE_VERSION" ]; then
