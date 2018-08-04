@@ -40,7 +40,6 @@ services:
     image: mariadb:10.2
     volumes:
       - mysql-vol:/var/lib/mysql/
-      - ./data/conf/mysql/:/etc/mysql/conf.d/:ro
     environment:
       - TZ=Europe/Berlin
       - MYSQL_ROOT_PASSWORD=LaE76DW3

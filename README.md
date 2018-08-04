@@ -1,29 +1,25 @@
 # Seafile Server Docker image
 [Seafile](http://seafile.com/) server Docker image based on [Alpine Linux](https://hub.docker.com/_/alpine/).
-
-Also in my [Github repository](https://github.com/VGoshev/seafile-docker) you can find some usefull scripts for helping running containers.
+Based on the image from sunx/seafile-docker(https://github.com/VGoshev/seafile-docker).
 
 ## Supported tags and respective `Dockerfile` links
 
-* [`6.2.5`](https://github.com/VGoshev/seafile-docker/blob/6.2.2/docker/Dockerfile), [`latest`](https://github.com/VGoshev/seafile-docker/blob/master/docker/Dockerfile) - Seafile Server v6.2.5 - latest available version
-
-Dockerfiles for older versions of Seafile Server you can find [there](https://github.com/VGoshev/seafile-docker/tags).
+* [`6.2.5`](https://github.com/rohwerj/seafile-docker/blob/6.2.5/docker/Dockerfile), [`latest`](https://github.com/rohwerj/seafile-docker/blob/master/docker/Dockerfile) - Seafile Server v6.2.5 - latest available version
 
 ## Quickstart
 
 To run container you can use following command:
 ```bash
 docker run \  
-  -v /home/docker/seafile:/home/seafile \  
+  -v seafile_data:/seafile/datat \
   -p 127.0.0.1:8000:8000 \  
   -p 127.0.0.1:8082:8082 \  
-  -ti sunx/seafile`
+  rohwerj/seafile`
 ```
-Containers, based on this image will automatically configure 
- Seafile enviroment if there isn't any. If Seafile enviroment is from previous version of Seafile, container will automatically upgrade it to latest version (by calling Seafile upgrade scripts).
+Containers, based on this image, will automatically configure
+ a Seafile enviroment if it doesn't already exist. If the existing Seafile enviroment is from a previous version of Seafile, container will automatically upgrade it to latest version (by calling the Seafile database upgrade scripts).
  
-But I would advise you to do data backups before upgrading image 
- (to not lose your data in case of bugs in upgrade logic of this image or Seafile upgrde scripts).
+A backup of the databases and data volume should be made before an upgrade to a newer version.
 
 ## Detailed description of image and containers
 
@@ -33,12 +29,12 @@ This image uses 2 tcp ports:
 * 8000 - seafile port
 * 8082 - seahub port
 
-If you want to run seafdav (WebDAV for Seafile), then port 8080 will be used also.
+If you want to run seafdav (WebDAV for Seafile), then port 8080 will be used also (not currently supported by this image).
 
 ### Volume
-This image uses one volume with internal path `/home/seafile`
+This image uses one volume with internal path `/seafile/data`
 
-I would recommend you use host directory mapping of named volume to run containers, so you will not lose your valuable data after image update and starting new container
+I would recommend you use host directory mapping of named volume to run containers, so you will not lose your valuable data after image update and starting a new container
 
 ### Web server configuration
 
@@ -46,11 +42,11 @@ This image doesnt contain any web-servers, because you, usually, already have so
 
 
 For Web-server configuration, as media directory location you should enter
-`<volume/path>/seafile-server/seahub/media`
+`/seafile/seafile-server/seahub/media`
 
-In [httpd-conf](https://github.com/VGoshev/seafile-docker/blob/master/httpd-conf/) directory you can find
-[lighttpd](https://www.lighttpd.net/) [config example](https://github.com/VGoshev/seafile-docker/blob/master/httpd-conf/lighttpd.conf.example) and
-[haaproxy](https://www.haproxy.com/) [config example](https://github.com/VGoshev/seafile-docker/blob/master/httpd-conf/haproxy.cfg).
+In [httpd-conf](https://github.com/rohwerj/seafile-docker/blob/master/httpd-conf/) directory you can find
+[lighttpd](https://www.lighttpd.net/) [config example](https://github.com/rohwerj/seafile-docker/blob/master/httpd-conf/lighttpd.conf.example) and
+[haaproxy](https://www.haproxy.com/) [config example](https://github.com/rohwerj/seafile-docker/blob/master/httpd-conf/haproxy.cfg).
 
 You can find 
 [Nginx](https://manual.seafile.com/deploy/deploy_with_nginx.html) and 
@@ -60,43 +56,34 @@ configurations in official Seafile Server [Manual](https://manual.seafile.com/).
 ### Supported ENV variables
 
 When you running container, you can pass several enviroment variables (with **--env** option of **docker run** command):
-* **`INTERACTIVE`**=\<0|1> - if container should ask you about some configuration values (on first run) and about upgrades. Default: 1
-* **`SERVER_NAME`**=\<...> - Name of Seafile server (3 - 15 letters or digits), used only for first run in non-interactive mode. Default: Seafile
-* **`SERVER_DOMAIN`**=\<...> - Domain or ip of seafile server, used only for first run in non-interactive mode. Default: seafile.domain.com
-* **`SEAHUB`**=\<fastcgi> - If seahub should be started in FastCGI mode (set it "fastcgi" for FastCGI mode or leave empty otherwise). Default: empty (not FastCGI mode).
-* **`SEAFILE_FASTCGI_HOST`**=\<ip> - Binding ip for seahub in FastCGI mode. Default: 127.0.0.1.
-* **`HANDLE_SIGNALS`**=\<0|1> - If container should properly handle signals like SIGHUP and SIGTERM (SIGTERM is sending on `docker stop` command, for example). If signals handling is turned on, then script will run infinity cycle for waiting signal, what, in theory, could slightly increase CPU consumption by container. Default: 1 (i.e. Turned on).
+* **`SERVER_NAME`**=\<...> - Name of Seafile server (3 - 15 letters or digits), used only for first run. Default: Seafile
+* **`SERVER_DOMAIN`**=\<...> - Domain or ip of seafile server, used only for first run. Default: seafile.domain.com
+* **`MYSQL_HOST`**=\<...> - Host name of mysql/mariadb server. Used for waiting on the database server on startup (not used if empty). Default: <empty>
+* **`MYSQL_USER`**=\<...> - User name for the mysql/mariadb server. Only used when MYSQL_HOST is set. Default: seafile
+* **`MYSQL_PASS`**=\<...> - Password for the mysql/mariadb server. Only used when MYSQL_HOST is set. Default: seafile
 
 ## Useful commands in container
 
-When you're inside of container, in home directory of seafile user, you can use following useful commands:
-* `seafile-fsck` - check your libraries for errors (Originally seaf-fsck.sh is used for it)
-* `seafile-gc` - remove ald unused data from storage of your seafile libraries (Originally seaf-gc.sh is used for it)
-* `seafile-admin start` - start seafile and seahub daemons (if they were stopped)
-* `seafile-admin stop` - stop seafile and seahub daemons
-* `seafile-admin reset-admin` - reset seafile admin user and/or password
-* `seafile-admin setup` - setup ccnet, seafile and seahub services (if they wasn't configured automatically by some reason)
-* `seafile-admin create-admin` - create seafile admin user (if it wasn't created automatically by some reason)
+With `docker exec -it seafile ash` the following commands can be executed:
+* `seaf-fsck -F /seafile/data/conf -c /seafile/data/ccnet -d /seafile/data/seafile-data` check your libraries for errors
+* `seafserv-gc -F /seafile/data/conf -c /seafile/data/ccnet -d /seafile/data/seafile-data ` - remove ald unused data from storage of your seafile libraries
 
 ## Tips&amp;Tricks and Known issues
 
 * Make sure, that mounted data volume and files are radable and writable by container's seafile user(2016:2016).
 
 * If you want to run seafdav, which is disabled by default, you can read it's [manual](https://manual.seafile.com/extension/webdav.html). Do not forget to publish port 8080 after it.
+(not yet supported by this image).
 
 * If you do not want container to automatically upgrade your Seafile enviroment on image (and Seafile-server) update, 
-you can add empty file named `.no-update` to directory `/home/seafile` in your container. You can use **`docker exec <container_name> touch /home/seafile/.no-update`** for it.
+you can add empty file named `.no-update` to directory `/seafile/data` in your container. You can use **`docker exec <container_name> touch /seafile/data/.no-update`** for it.
 
 * Container uses seafile user to run seafile, so if you need to do something with root access in container, you can use **`docker exec -ti --user=0 <container_name> /bin/sh`** for it.
 
-* On first run (end every image upgrade) container will copy seahub directory from `/usr/local/share/seahub` to `/home/seafile/seafile-server/seahub `(i.e. to the volume), so it cost about 40Mb of space. I'm not sure if it could be changed without using webserver inside of container (But 40Mb of space isn't to much in our days, I think).
-
-* At this moment most seafile scripts (which are located in `/usr/local/share/seafile/scripts` directory) aren't working properly, but I do not think that they are to usefull for this image (scripts `seaf-fsck.sh` and `seaf-gc.sh` are working correctly and also avaliable as `/usr/local/bin/seafile-fsck` and `/usr/local/bin/seafile-gc`).
-
-* This image confugure sqlite-based Seafile server installation. If you want to run Seafile server witn MySQL\MariaDB, then you can configure it manually, or say to me about it and I'll add such configuration option.
+* This image configures a sqlite-based Seafile server installation. The plan is to support the mysql installation in a later version.
 
 ## License
 
-This Dockerfile and scripts are released under [MIT License](https://github.com/VGoshev/seafile-docker/blob/master/LICENSE).
+This Dockerfile and scripts are released under [MIT License](https://github.com/rohwerj/seafile-docker/blob/master/LICENSE).
 
 [Seafile](https://github.com/haiwen/seafile/blob/master/LICENSE.txt) and [Alpine Linux](https://www.alpinelinux.org/) have their own licenses.
