@@ -16,9 +16,9 @@ if [[ ! -z "$MYSQL_HOST" ]]; then
     done
 fi
 
-SEAFILE_VERSION=`cat /var/lib/seafile/version`
+SEAFILE_VERSION=`cat /seafile/version`
 if [ -z "$SEAFILE_VERSION" ]; then
-	echo "can not find Seafile version in file /var/lib/seafile/version, probably corrupted image"
+	echo "can not find Seafile version in file /seafile/version, probably corrupted image"
 	exit 1
 fi
 

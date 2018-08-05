@@ -84,7 +84,7 @@ RUN cd seafobj-${SEAFILE_VERSION}-server/ && \
 RUN cd seafdav-${SEAFILE_VERSION}-server/ && \
     mv wsgidav /usr/local/lib/python2.7/site-packages && cd .. && rm -rf seafdav-${SEAFILE_VERSION}-server
 
-RUN mkdir -p /var/lib/seafile && echo -n "$SEAFILE_VERSION" > /var/lib/seafile/version
+RUN echo -n "$SEAFILE_VERSION" > /seafile/version
 
 FROM alpine:3.4
 MAINTAINER Jan Rohwer <jan@rohwer.online>
@@ -122,7 +122,6 @@ RUN addgroup -g 2016 seafile && \
 
 COPY --from=build /seafile/seafile-server /seafile/seafile-server
 COPY --from=build /usr/local /usr/local
-COPY --from=build /var/lib/seafile/version /var/lib/seafile/version
 
 # Container initialization scripts ()
 COPY docker-entrypoint.sh /
