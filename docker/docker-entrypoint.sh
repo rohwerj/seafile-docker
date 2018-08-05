@@ -11,7 +11,7 @@ PATH=${PATH}:/usr/local/bin
 
 if [[ ! -z "$MYSQL_HOST" ]]; then
     # Wait for containers
-    while ! mysqladmin ping --host $MYSQL_HOST -u$MYSQL_USER -p$MYSQL_PASS --silent; do
+    while ! mysqladmin ping --host $MYSQL_HOST --port $MYSQL_PORT -u$MYSQL_USER -p$MYSQL_PASS --silent; do
       sleep 2
     done
 fi
@@ -40,13 +40,22 @@ export SEAFILE_CENTRAL_CONF_DIR
 if [ ! -f data/$VERSION_FILE ]; then
 	echo 'No previous version on Seafile configurations found, starting seafile configuration...'
 
-
 	# Init ccnet
 	if [ ! -d 'data/ccnet' ]; then
-        [ -z "$SERVER_NAME"   ] && SERVER_NAME="Seafile"
-        [ -z "$SERVER_DOMAIN" ] && SERVER_DOMAIN="seafile.domain.com"
 
 		ccnet-init -F ${SEAFILE_CENTRAL_CONF_DIR} -c ${CCNET_CONF_DIR} --name "$SERVER_NAME" --port 10001 --host "$SERVER_DOMAIN" || exit 3
+
+		if [ ! -z "$MYSQL_HOST" ]; then
+		    echo "[Database]
+ENGINE = mysql
+HOST = $MYSQL_HOST
+PORT = $MYSQL_PORT
+USER = $MYSQL_USER
+PASSWD = $MYSQL_PASS
+DB = ccnet
+CONNECTION_CHARSET = utf8" >> /seafile/data/conf/ccnet.conf
+		fi
+
 		echo '* ccnet configured successfully'
 	fi
 
@@ -54,6 +63,17 @@ if [ ! -f data/$VERSION_FILE ]; then
 	if [ ! -d "data/seafile-data" ]; then
 		seaf-server-init -F ${SEAFILE_CENTRAL_CONF_DIR} --seafile-dir ${SEAFILE_CONF_DIR} --port 12001 --fileserver-port 8082 || exit 4
 		echo "${SEAFILE_CONF_DIR}" > ${CCNET_CONF_DIR}/seafile.ini
+		if [ ! -z "$MYSQL_HOST" ]; then
+		    echo "[database]
+type = mysql
+host = $MYSQL_HOST
+port = $MYSQL_PORT
+user = $MYSQL_USER
+password = $MYSQL_PASS
+db_name = seafile
+connection_charset = utf8" >> /seafile/data/conf/seafile.conf
+		fi
+
 		echo '* seafile configured successfully'
 	fi
 
@@ -62,9 +82,20 @@ if [ ! -f data/$VERSION_FILE ]; then
 		SKEY1=`uuidgen -r`
 		SKEY2=`uuidgen -r`
 		SKEY=`echo "$SKEY1$SKEY2" | cut -c1-40`
-		echo "SECRET_KEY = '${SKEY}'
-
-DATABASES = {
+		echo "SECRET_KEY = '${SKEY}'" > ${SEAFILE_CENTRAL_CONF_DIR}/seahub_settings.py
+		if [ ! -z "$MYSQL_HOST" ]; then
+            echo "DATABASES = {
+    'default': {
+        'ENGINE': 'django.db.backends.mysql', # Add 'postgresql_psycopg2', 'mysql', 'sqlite3' or 'oracle'.
+        'NAME': 'seahub', # Or path to database file if using sqlite3.
+        'USER': '$MYSQL_USER',                      # Not used with sqlite3.
+        'PASSWORD': '$MYSQL_PASS',                  # Not used with sqlite3.
+        'HOST': '$MYSQL_HOST',                      # Set to empty string for localhost. Not used with sqlite3.
+        'PORT': '$MYSQL_PORT',                      # Set to empty string for default. Not used with sqlite3.
+    }
+}" >> ${SEAFILE_CENTRAL_CONF_DIR}/seahub_settings.py
+        else
+            echo "DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.sqlite3', # Add 'postgresql_psycopg2', 'mysql', 'sqlite3' or 'oracle'.
         'NAME': '/seafile/data/seahub.db', # Or path to database file if using sqlite3.
@@ -73,8 +104,8 @@ DATABASES = {
         'HOST': '',                      # Set to empty string for localhost. Not used with sqlite3.
         'PORT': '',                      # Set to empty string for default. Not used with sqlite3.
     }
-}" > ${SEAFILE_CENTRAL_CONF_DIR}/seahub_settings.py
-
+}" >> ${SEAFILE_CENTRAL_CONF_DIR}/seahub_settings.py
+        fi
 		echo '* seahub configured successfully'
 	fi
 

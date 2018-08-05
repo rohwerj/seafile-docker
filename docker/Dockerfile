@@ -86,12 +86,17 @@ RUN cd seafdav-${SEAFILE_VERSION}-server/ && \
 
 RUN echo -n "$SEAFILE_VERSION" > /seafile/version
 
+RUN mkdir /seafile/logs && \
+    mkdir /seafile/pids && \
+    mkdir /seafile/data
+
 FROM alpine:3.4
 MAINTAINER Jan Rohwer <jan@rohwer.online>
 
 ENV SERVER_NAME="Seafile"
 ENV SERVER_DOMAIN="seafile.domain.com"
 ENV MYSQL_HOST=""
+ENV MYSQL_PORT="3306"
 ENV MYSQL_USER="seafile"
 ENV MYSQL_PASS="seafile"
 
@@ -120,7 +125,7 @@ export SEAFILE_CENTRAL_CONF_DIR=/seafile/data/conf' >> /etc/profile.d/seafile.sh
 RUN addgroup -g 2016 seafile && \
     adduser -D -s /bin/sh -g "Seafile Server" -G seafile -h /seafile -u 2016 seafile
 
-COPY --from=build /seafile/seafile-server /seafile/seafile-server
+COPY --from=build /seafile/ /seafile/
 COPY --from=build /usr/local /usr/local
 
 # Container initialization scripts ()
@@ -129,10 +134,7 @@ COPY syslog-ng.conf /etc/syslog-ng/syslog-ng.conf
 COPY supervisord.conf /etc/supervisord.conf
 COPY seahub.conf /seafile/seahub.conf
 
-RUN mkdir /seafile/logs && \
-    mkdir /seafile/pids && \
-    mkdir /seafile/data && \
-    chown -R seafile:seafile /seafile && \
+RUN chown -R seafile:seafile /seafile && \
     chmod +x /docker-entrypoint.sh
 
 EXPOSE 8000 8082
