@@ -99,6 +99,7 @@ ENV MYSQL_HOST=""
 ENV MYSQL_PORT="3306"
 ENV MYSQL_USER="seafile"
 ENV MYSQL_PASS="seafile"
+ENV ENABLE_SEAFDAV="false"
 
 ###########################################
 # Runtime dependencies for Seafile-Server #
@@ -137,7 +138,7 @@ COPY seahub.conf /seafile/seahub.conf
 RUN chown -R seafile:seafile /seafile && \
     chmod +x /docker-entrypoint.sh
 
-EXPOSE 8000 8082
+EXPOSE 8000 8082 8080
 
 VOLUME /seafile/data
 
