@@ -1,11 +1,11 @@
-FROM alpine:3.4 AS build
+FROM alpine:3.8 AS build
 MAINTAINER Jan Rohwer <jan@rohwer.online>
 
 # SEAFILE_VERSION:
 # Seafile-Server version do townload and install
 #  See https://github.com/haiwen/seafile-server/releases
 #  for latest avaliable version
-ARG	SEAFILE_VERSION="6.2.5"
+ARG	SEAFILE_VERSION="6.3.2"
 ARG LIBEVHTP_VERSION="1.2.10"
 ARG LIBSEARPC_VERSION="3.1-latest"
 ARG PKG_CONFIG_PATH=/usr/local/lib/pkgconfig
@@ -17,7 +17,7 @@ RUN apk add -U --no-cache --virtual .build_dep \
     curl-dev libevent-dev glib-dev util-linux-dev intltool \
     sqlite-dev libarchive-dev libtool jansson-dev vala fuse-dev \
     cmake make musl-dev gcc g++ automake autoconf bsd-compat-headers \
-    python-dev file mariadb-dev mariadb-dev py-pip git openssl
+    python-dev file mariadb-dev mariadb-dev py-pip git openssl jpeg-dev zlib-dev libxml2-dev libxslt-dev
 
 WORKDIR /seafile
 
@@ -70,7 +70,7 @@ RUN cd seahub-${SEAFILE_VERSION}-server/ && \
 
 RUN cd seafile-server/seahub && \
     pip install -r requirements.txt --prefix /usr/local && \
-    pip install --prefix /usr/local gunicorn django-picklefield requests flup==1.0.3.dev-20110405
+    pip install --prefix /usr/local gunicorn django-picklefield requests flup
 
 ###########
 # SeafObj #
@@ -90,7 +90,7 @@ RUN mkdir /seafile/logs && \
     mkdir /seafile/pids && \
     mkdir /seafile/data
 
-FROM alpine:3.4
+FROM alpine:3.8
 MAINTAINER Jan Rohwer <jan@rohwer.online>
 
 ENV SERVER_NAME="Seafile"
@@ -106,8 +106,8 @@ ENV MYSQL_PASS="seafile"
 ###########################################
 RUN ln -s /etc/profile.d/color_prompt /etc/profile.d/color_prompt.sh && \
     apk -U --no-cache add bash openssl python py-setuptools py-imaging sqlite \
-        libevent util-linux glib jansson libarchive \
-	    mariadb-client-libs postgresql-libs py-pillow py-mysqldb mariadb-client syslog-ng supervisor
+        libevent util-linux glib jansson libarchive libjpeg libxml2 libxslt \
+	    postgresql-libs py-pillow py-mysqldb mariadb-client syslog-ng supervisor
 
 WORKDIR /seafile
 
