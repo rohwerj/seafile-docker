@@ -5,7 +5,8 @@ Uses tini as PID 1 and supervisord as process manager.
 
 ## Supported tags and respective `Dockerfile` links
 
-* [`6.2.5`](https://github.com/rohwerj/seafile-docker/blob/6.2.5/docker/Dockerfile), [`latest`](https://github.com/rohwerj/seafile-docker/blob/master/docker/Dockerfile) - Seafile Server v6.2.5 - latest available version
+* [`6.3.2`](https://github.com/rohwerj/seafile-docker/blob/6.3.2/docker/Dockerfile), [`latest`](https://github.com/rohwerj/seafile-docker/blob/master/docker/Dockerfile) - Seafile Server v6.3.2 - latest available version
+* [`6.2.5`](https://github.com/rohwerj/seafile-docker/blob/6.2.5/docker/Dockerfile) - Seafile Server v6.2.5
 
 ## Quickstart
 
@@ -23,8 +24,9 @@ Containers, based on this image, will automatically configure
 A backup of the databases and data volume should be made before an upgrade to a newer version.
 
 After update to version 6.3.x the following commands have to be executed in the running container:
-`source /etc/profile.d/seafile.sh`
-`python manage.py migrate_file_comment`
+* `source /etc/profile.d/seafile.sh`
+* `python manage.py migrate_file_comment`
+
 [see changelog](https://manual.seafile.com/changelog/server-changelog.html)
 
 ## Detailed description of image and containers
@@ -63,8 +65,8 @@ On the first start with an empty volume mounted on /seafile/data, the image will
 It uses the environment variable MYSQL_HOST to determine whether a sqlite or mysql setup is performed (variable ist empty -> sqlite, otherwise -> mysql).
 
 To create a superuser you have to execute the following commands in the directory /seafile/seafile-server/seahub as user seafile:
-`source /etc/profile.d/seafile.sh`
-`python manage.py createsuperuser`
+* `source /etc/profile.d/seafile.sh`
+* `python manage.py createsuperuser`
 
 ## Useful commands in container
 
