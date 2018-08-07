@@ -188,7 +188,7 @@ if [[ "$ENABLE_SEAFDAV" = "true" ]]; then
     echo "
 [program:seafdav]
 directory=/seafile/
-command=bash -c \"python -m wsgidav.server.run_server --log-file /seafile/logs/seafdav.log --pid /seafile/pids/seafdav.pid --port 8080 --host $SERVER_DOMAIN\"
+command=bash -c \"python -m wsgidav.server.run_server --log-file /seafile/logs/seafdav.log --pid /seafile/pids/seafdav.pid --port 8080 --host 0.0.0.0\"
 user=seafile
 stdout_logfile=/dev/stdout
 stdout_logfile_maxbytes=0

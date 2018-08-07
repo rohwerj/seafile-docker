@@ -13,6 +13,7 @@ services:
       MYSQL_HOST: mysql
       MYSQL_USER: seafile
       MYSQL_PASS: seafile
+      ENABLE_SEAFDAV: "true"
 
     depends_on: 
       - mysql
@@ -23,11 +24,9 @@ services:
     dns:
       - ${IPV4_NETWORK:-172.22.1}.254
     ports:
-    ports:
       - 8000:8000
       - 8082:8082
-      #Port 8080 is used for seafdav which is disabled by default
-#      - 127.0.0.1:8080:8080
+      - 8080:8080
     sysctls:
       - net.ipv6.conf.all.disable_ipv6=${SYSCTL_IPV6_DISABLED:-0}
     networks:
@@ -70,5 +69,4 @@ networks:
 
 volumes:
   seafile-vol:
-  seafile-vol-test:
   mysql-vol:
