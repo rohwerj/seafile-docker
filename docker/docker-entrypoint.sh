@@ -183,4 +183,22 @@ ln -s /seafile/data/seahub-data/avatars /seafile/seafile-server/seahub/media/ava
 mkdir -p /seafile/data/seahub-data/custom
 ln -s /seafile/data/seahub-data/custom /seafile/seafile-server/seahub/media/custom
 
+if [[ "$ENABLE_SEAFDAV" = "true" ]]; then
+
+    echo "
+[program:seafdav]
+directory=/seafile/
+command=bash -c \"python -m wsgidav.server.run_server --log-file /seafile/logs/seafdav.log --pid /seafile/pids/seafdav.pid --port 8080 --host $SERVER_DOMAIN\"
+user=seafile
+stdout_logfile=/dev/stdout
+stdout_logfile_maxbytes=0
+stderr_logfile=/dev/stderr
+stderr_logfile_maxbytes=0
+autorestart=true
+environment=SEAHUB_DIR="/seafile/seafile-server/seahub"
+
+" >> /etc/supervisord.conf
+
+fi
+
 exec "$@"
