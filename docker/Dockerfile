@@ -107,7 +107,7 @@ ENV MYSQL_PASS="seafile"
 RUN ln -s /etc/profile.d/color_prompt /etc/profile.d/color_prompt.sh && \
     apk -U --no-cache add bash openssl python py-setuptools py-imaging sqlite \
         libevent util-linux glib jansson libarchive libjpeg libxml2 libxslt \
-	    postgresql-libs py-pillow py-mysqldb mariadb-client syslog-ng supervisor
+	    postgresql-libs py-pillow py-mysqldb mariadb-client syslog-ng supervisor tini
 
 WORKDIR /seafile
 
@@ -141,5 +141,5 @@ EXPOSE 8000 8082
 
 VOLUME /seafile/data
 
-ENTRYPOINT ["/docker-entrypoint.sh"]
+ENTRYPOINT ["/sbin/tini", "--", "/docker-entrypoint.sh"]
 CMD exec /usr/bin/supervisord -c /etc/supervisord.conf
