@@ -1,6 +1,8 @@
 # Seafile Server Docker image
 [Seafile](http://seafile.com/) server Docker image based on [Alpine Linux](https://hub.docker.com/_/alpine/).
+
 Based on the image from sunx/seafile-docker(https://github.com/VGoshev/seafile-docker).
+
 Uses tini as PID 1 and supervisord as process manager.
 
 ## Supported tags and respective `Dockerfile` links
@@ -11,7 +13,7 @@ Uses tini as PID 1 and supervisord as process manager.
 ## Quickstart
 
 To run container you can use following command:
-```bash
+```
 docker run \  
   -v seafile_data:/seafile/data \
   -p 8000:8000 \
@@ -23,10 +25,11 @@ Containers, based on this image, will automatically configure
 
 A backup of the databases and data volume should be made before an upgrade to a newer version.
 
-After update to version 6.3.x the following commands have to be executed in the running container:
-* `source /etc/profile.d/seafile.sh`
-* `python manage.py migrate_file_comment`
-
+After update to version 6.3.x the following commands have to be executed in the running container in `/seafile/seafile-server/seahub`:
+```
+source /etc/profile.d/seafile.sh
+python manage.py migrate_file_comment
+```
 [see changelog](https://manual.seafile.com/changelog/server-changelog.html)
 
 ## Detailed description of image and containers
@@ -42,12 +45,14 @@ This image uses 3 tcp ports:
 This image uses one volume with internal path `/seafile/data`
 
 The directory structure is the following:
+```
 /seafile -> main directory for the application
   /data  -> data directory with configuration and sqlite databases (if not using mysql)
   /seafile-server -> current version of the seafile-server
     /seahub       -> seahub application
   /logs   -> directory for all the log files
   /pids   -> directory containing the pid files
+```
 
 ### Supported ENV variables
 
@@ -64,9 +69,11 @@ You can pass several enviroment variables to the image:
 On the first start with an empty volume mounted on /seafile/data, the image will initialize the seafile environment for you.
 It uses the environment variable MYSQL_HOST to determine whether a sqlite or mysql setup is performed (variable ist empty -> sqlite, otherwise -> mysql).
 
-To create a superuser you have to execute the following commands in the directory /seafile/seafile-server/seahub as user seafile:
-* `source /etc/profile.d/seafile.sh`
-* `python manage.py createsuperuser`
+To create a superuser you have to execute the following commands in the directory `/seafile/seafile-server/seahub` as user seafile:
+```
+source /etc/profile.d/seafile.sh
+python manage.py createsuperuser
+```
 
 ## Useful commands in container
 
@@ -95,7 +102,7 @@ in the official Seafile Server [Manual](https://manual.seafile.com/).
 * Make sure, that mounted data volume and files are radable and writable by container's seafile user(2016:2016).
 
 * If you do not want to automatically upgrade your Seafile enviroment,
-you can add an empty file named `.no-update` to the directory `/seafile/data` in your container. You can use **`docker exec <container_name> touch /seafile/data/.no-update`** for it.
+you can add an empty file named `.no-update` to the directory `/seafile/data`. You can do that by running **`docker exec <container_name> touch /seafile/data/.no-update`**.
 
 * The container uses the root user to start the entrypoint (and therefore supervisor). To execute scripts you need to use the seafile user **`docker exec -ti --user=2016 <container_name> /bin/sh`**.
 
