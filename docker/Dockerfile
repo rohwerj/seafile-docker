@@ -5,7 +5,7 @@ MAINTAINER Jan Rohwer <jan@rohwer.online>
 # Seafile-Server version do townload and install
 #  See https://github.com/haiwen/seafile-server/releases
 #  for latest avaliable version
-ARG	SEAFILE_VERSION="6.3.2"
+ARG	SEAFILE_VERSION="6.3.4"
 ARG LIBEVHTP_VERSION="1.2.10"
 ARG LIBSEARPC_VERSION="3.1-latest"
 ARG PKG_CONFIG_PATH=/usr/local/lib/pkgconfig
