@@ -36,12 +36,12 @@ services:
 
 
   mysql:
-    image: mariadb:10.2
+    image: mariadb:latest
     volumes:
       - mysql-vol:/var/lib/mysql/
     environment:
       - TZ=Europe/Berlin
-      - MYSQL_ROOT_PASSWORD=LaE76DW3
+      - MYSQL_RANDOM_ROOT_PASSWORD=yes
       - MYSQL_DATABASE=seafile
       - MYSQL_USER=seafile
       - MYSQL_PASSWORD=seafile

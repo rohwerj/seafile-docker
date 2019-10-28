@@ -3,7 +3,7 @@
 cd `dirname $0`
 
 ARCH=`uname -m`
-IMAGE="sunx/seafile"
+IMAGE="rohwerj/seafile"
 
 if `echo $ARCH | grep -q arm`; then
 	#Use armhf/alpine as base image instead of alpine
