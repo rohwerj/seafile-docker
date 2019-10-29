@@ -13,6 +13,8 @@ services:
       MYSQL_HOST: mysql
       MYSQL_USER: seafile
       MYSQL_PASS: seafile
+      SEAFILE_ADMIN_EMAIL: test@test.de
+      SEAFILE_ADMIN_PASSWORD: testit
       ENABLE_SEAFDAV: "true"
 
     depends_on: 
@@ -38,13 +40,11 @@ services:
   mysql:
     image: mariadb:latest
     volumes:
+      - ./docker/mysql/init:/docker-entrypoint-initdb.d
       - mysql-vol:/var/lib/mysql/
     environment:
       - TZ=Europe/Berlin
       - MYSQL_RANDOM_ROOT_PASSWORD=yes
-      - MYSQL_DATABASE=seafile
-      - MYSQL_USER=seafile
-      - MYSQL_PASSWORD=seafile
     restart: always
     dns:
       - ${IPV4_NETWORK:-172.22.1}.254

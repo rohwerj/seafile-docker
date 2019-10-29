@@ -109,7 +109,12 @@ connection_charset = utf8" >> /seafile/data/conf/seafile.conf
 		echo '* seahub configured successfully'
 	fi
 
-	python seafile-server/seahub/manage.py syncdb || exit 5
+  mysql -h $MYSQL_HOST --port $MYSQL_PORT -u $MYSQL_USER -p$MYSQL_PASS seahub < /seafile/seafile-server/seahub/sql/mysql.sql
+
+  sed -i 's/%ADMIN_EMAIL%/'$SEAFILE_ADMIN_EMAIL'/' /seafile/seafile-admin.sql
+  sed -i 's/%ADMIN_PASSWORD%/'$SEAFILE_ADMIN_PASSWORD'/' /seafile/seafile-admin.sql
+  mysql -h $MYSQL_HOST --port $MYSQL_PORT -u $MYSQL_USER -p$MYSQL_PASS ccnet < /seafile/seafile-admin.sql
+
 	echo '* seahub database synchronized successfully'
 
     chown -R seafile:seafile /seafile/
@@ -117,7 +122,7 @@ connection_charset = utf8" >> /seafile/data/conf/seafile.conf
 
 	# Keep seafile version for managing future updates
 	echo -n "${SEAFILE_VERSION}" > data/$VERSION_FILE
-	echo "Configuration compleated!"
+	echo "Configuration completed!"
 
 else #[ ! -f $VERSION_FILE ];
 	# Need to check if we need to run upgrade scripts
