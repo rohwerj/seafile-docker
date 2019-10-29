@@ -5,7 +5,7 @@ MAINTAINER Jan Rohwer <jan@rohwer.online>
 # Seafile-Server version do townload and install
 #  See https://github.com/haiwen/seafile-server/releases
 #  for latest avaliable version
-ARG	SEAFILE_VERSION="6.3.4"
+ARG	SEAFILE_VERSION="7.0.5"
 ARG LIBEVHTP_VERSION="1.2.10"
 ARG LIBSEARPC_VERSION="3.1-latest"
 ARG PKG_CONFIG_PATH=/usr/local/lib/pkgconfig
@@ -70,7 +70,7 @@ RUN cd seahub-${SEAFILE_VERSION}-server/ && \
 
 RUN cd seafile-server/seahub && \
     pip install -r requirements.txt --prefix /usr/local && \
-    pip install --prefix /usr/local gunicorn django-picklefield requests flup
+    pip install --prefix /usr/local gunicorn django-picklefield requests flup SQLAlchemy
 
 ###########
 # SeafObj #

@@ -109,12 +109,16 @@ connection_charset = utf8" >> /seafile/data/conf/seafile.conf
 		echo '* seahub configured successfully'
 	fi
 
-  mysql -h $MYSQL_HOST --port $MYSQL_PORT -u $MYSQL_USER -p$MYSQL_PASS seahub < /seafile/seafile-server/seahub/sql/mysql.sql
-
+  mysql -h $MYSQL_HOST --port $MYSQL_PORT -u $MYSQL_USER -p$MYSQL_PASS ccnet < /seafile/seafile-server/scripts/sql/mysql/ccnet.sql
   sed -i 's/%ADMIN_EMAIL%/'$SEAFILE_ADMIN_EMAIL'/' /seafile/seafile-admin.sql
   sed -i 's/%ADMIN_PASSWORD%/'$SEAFILE_ADMIN_PASSWORD'/' /seafile/seafile-admin.sql
   mysql -h $MYSQL_HOST --port $MYSQL_PORT -u $MYSQL_USER -p$MYSQL_PASS ccnet < /seafile/seafile-admin.sql
+	echo '* ccnet database synchronized successfully'
 
+  mysql -h $MYSQL_HOST --port $MYSQL_PORT -u $MYSQL_USER -p$MYSQL_PASS seafile < /seafile/seafile-server/scripts/sql/mysql/seafile.sql
+	echo '* seafile database synchronized successfully'
+
+  mysql -h $MYSQL_HOST --port $MYSQL_PORT -u $MYSQL_USER -p$MYSQL_PASS seahub < /seafile/seafile-server/seahub/sql/mysql.sql
 	echo '* seahub database synchronized successfully'
 
     chown -R seafile:seafile /seafile/
