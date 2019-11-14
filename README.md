@@ -7,7 +7,8 @@ Uses tini as PID 1 and supervisord as process manager.
 
 ## Supported tags and respective `Dockerfile` links
 
-* [`6.3.4`](https://github.com/rohwerj/seafile-docker/blob/6.3.4/docker/Dockerfile), [`latest`](https://github.com/rohwerj/seafile-docker/blob/master/docker/Dockerfile) - Seafile Server v6.3.4 - latest available version
+* [`7.0.5`](https://github.com/rohwerj/seafile-docker/blob/7.0.5/docker/Dockerfile), [`latest`](https://github.com/rohwerj/seafile-docker/blob/master/docker/Dockerfile) - Seafile Server v7.0.5 - latest available version
+* [`6.3.4`](https://github.com/rohwerj/seafile-docker/blob/6.3.4/docker/Dockerfile) - Seafile Server v6.3.4
 * [`6.3.2`](https://github.com/rohwerj/seafile-docker/blob/6.3.2/docker/Dockerfile) - Seafile Server v6.3.2
 * [`6.2.5`](https://github.com/rohwerj/seafile-docker/blob/6.2.5/docker/Dockerfile) - Seafile Server v6.2.5
 
