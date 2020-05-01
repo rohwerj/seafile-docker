@@ -1,4 +1,4 @@
-FROM seafileltd/seafile-mc:7.0.5
+FROM seafileltd/seafile-mc:latest
 
 MAINTAINER Jan Rohwer <jan@rohwer.online>
 
